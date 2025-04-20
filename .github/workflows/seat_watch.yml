@@ -29,6 +29,5 @@ jobs:
           # SMTP credentials
           SMTP_USER:       ${{ secrets.SMTP_USER }}
           SMTP_PASS:       ${{ secrets.SMTP_PASS }}
-          EMAIL_FROM:      ${{ secrets.EMAIL_FROM }}
           EMAIL_TO:        ${{ secrets.EMAIL_TO }}
         run: python seat-watch-pw.py
