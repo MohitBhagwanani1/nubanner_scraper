@@ -3,7 +3,7 @@ name: NU Banner Seat Watch
 
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '*/2 * * * *'
 
 jobs:
   watch:
