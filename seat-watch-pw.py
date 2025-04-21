@@ -75,21 +75,18 @@ def fetch_for(session, subj, num, crn):
 def main():
     session = build_session()
 
-    while True:
-        lines = []
-        for subj, num, crn in COURSES:
-            try:
-                seats, wait = fetch_for(session, subj, num, crn)
-            except Exception as e:
-                lines.append(f"{subj}{num}-{crn}: FETCH ERROR ({e})")
-            else:
-                lines.append(f"{subj}{num}-{crn}: {seats} seat(s), {wait} wait slot(s)")
+    lines = []
+    for subj, num, crn in COURSES:
+        try:
+            seats, wait = fetch_for(session, subj, num, crn)
+        except Exception as e:
+            lines.append(f"{subj}{num}-{crn}: FETCH ERROR ({e})")
+        else:
+            lines.append(f"{subj}{num}-{crn}: {seats} seat(s), {wait} wait slot(s)")
 
-        body = "\n".join(lines)
-        print("📧 Sending status update:", " | ".join(lines))
-        send_email(body)
-
-        time.sleep(POLL_EVERY)
+    body = "\n".join(lines)
+    print("📧 Sending status update:", " | ".join(lines))
+    send_email(body)
 
 if __name__ == "__main__":
     main()
