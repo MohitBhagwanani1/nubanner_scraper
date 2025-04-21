@@ -7,11 +7,10 @@ import requests
 from email.message import EmailMessage
 from dotenv import load_dotenv
 
-# ─── Load .env (if you’re using one) ───────────────────────────────────────
+# ─── Load .env ────────────────────────────────────────────────────────────────
 load_dotenv()
-# ────────────────────────────────────────────────────────────────────────────
 
-# ─── CONFIG ────────────────────────────────────────────────────────────────
+# ─── CONFIG ──────────────────────────────────────────────────────────────────
 TERM       = "202550"  # Summer 1 2025
 COURSES    = [
     ("CSYE", "7374", "53300"),  # AI Agent Infrastructure
@@ -20,12 +19,12 @@ COURSES    = [
 POLL_EVERY = 180  # seconds between emails
 # ────────────────────────────────────────────────────────────────────────────
 
-# ─── Your browser cookies (from Chrome DevTools) ──────────────────────────
+# ─── Your browser cookies ────────────────────────────────────────────────────
 JSESSIONID      = os.getenv("JSESSIONID")
 NUBANNER_COOKIE = os.getenv("NUBANNER_COOKIE")
 # ────────────────────────────────────────────────────────────────────────────
 
-# ─── SMTP settings (env or .env) ──────────────────────────────────────────
+# ─── SMTP settings ───────────────────────────────────────────────────────────
 SMTP_USER  = os.getenv("SMTP_USER")
 SMTP_PASS  = os.getenv("SMTP_PASS")
 EMAIL_FROM = os.getenv("EMAIL_FROM", SMTP_USER)
@@ -44,11 +43,33 @@ def send_email(body: str):
 
 def build_session():
     sess = requests.Session()
+    # Banner’s session cookie:
     sess.cookies.set("JSESSIONID",      JSESSIONID,
                      domain="nubanner.neu.edu", path="/StudentRegistrationSsb")
+    # Banner’s authorization cookie:
     sess.cookies.set("nubanner-cookie", NUBANNER_COOKIE,
                      domain="nubanner.neu.edu", path="/")
     return sess
+
+def authorize_term(sess):
+    """
+    Tells Banner which term we want.  Must do this once per session
+    or /searchResults will always return zeros.
+    """
+    url = "https://nubanner.neu.edu/StudentRegistrationSsb/ssb/term/search?mode=search"
+    payload = {
+        "term": TERM,
+        "studyPath": "",
+        "studyPathText": "",
+        "startDatepicker": "",
+        "endDatepicker": ""
+    }
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+    }
+    r = sess.post(url, data=payload, headers=headers, timeout=10)
+    r.raise_for_status()
+    # you should get back {"fwdURL": "..."} if it worked
 
 def fetch_for(session, subj, num, crn):
     uid = str(int(time.time() * 1000))
@@ -65,15 +86,22 @@ def fetch_for(session, subj, num, crn):
     r = session.get(url, timeout=10)
     r.raise_for_status()
     j = r.json()
-    data = j.get("data") or []
-    for d in data:
+    if not j.get("success", True):
+        raise RuntimeError(f"Search API returned success=false: {j!r}")
+    for d in j.get("data", []):
         if d["courseReferenceNumber"] == crn:
             return d["seatsAvailable"], d["waitAvailable"]
-    # If not found, treat as 0/0
+    # not found → treat as 0/0
     return 0, 0
 
 def main():
     session = build_session()
+
+    try:
+        authorize_term(session)
+    except Exception as e:
+        print("❌ Failed to authorize term:", e)
+        return
 
     lines = []
     for subj, num, crn in COURSES:
