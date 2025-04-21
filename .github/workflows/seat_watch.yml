@@ -1,4 +1,3 @@
-# .github/workflows/seat_watch.yml
 name: NU Banner Seat Watch
 
 on:
@@ -11,11 +10,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
       - name: Fetch seat status
         id: fetch
+        env:
+          JSESSIONID:      ${{ secrets.JSESSIONID }}
+          NUBANNER_COOKIE: ${{ secrets.NUBANNER_COOKIE }}
         run: |
           python seat-watch-pw.py > status.txt
-          echo "::set-output name=body::$(cat status.txt)"
+          # this lets us carry the fetched text into the next step
+          echo "::set-output name=body::$(<status.txt)"
 
       - name: Send email via SendGrid
         uses: dawidd6/action-send-mail@v3

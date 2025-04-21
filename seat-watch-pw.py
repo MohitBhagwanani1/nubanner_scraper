@@ -114,7 +114,7 @@ def main():
 
     body = "\n".join(lines)
     print("📧 Sending status update:", " | ".join(lines))
-    send_email(body)
+    # send_email(body)
 
 if __name__ == "__main__":
     main()
