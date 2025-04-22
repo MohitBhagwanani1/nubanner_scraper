@@ -2,13 +2,16 @@ name: NU Banner Seat Watch
 
 on:
   schedule:
-    - cron: '*/02 * * * *'
+    - cron: '*/5 * * * *'   # every 5 minutes
+  workflow_dispatch:       # also allow manual run
 
 jobs:
   watch:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out code
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -16,26 +19,15 @@ jobs:
           python-version: '3.x'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install requests python-dotenv
 
-      - name: Fetch seat status
-        id: fetch
+      - name: Run Seat Watch script
         env:
+          # Banner cookies
           JSESSIONID:      ${{ secrets.JSESSIONID }}
           NUBANNER_COOKIE: ${{ secrets.NUBANNER_COOKIE }}
-        run: |
-          python seat-watch-pw.py > status.txt
-          # this lets us carry the fetched text into the next step
-          echo "::set-output name=body::$(<status.txt)"
-
-      - name: Send email via SendGrid
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.sendgrid.net
-          server_port: 587
-          username: apikey
-          password: ${{ secrets.SENDGRID_API_KEY }}
-          subject: "NU Banner Seat/Waitlist Status"
-          body:   ${{ steps.fetch.outputs.body }}
-          to:     ${{ secrets.EMAIL_TO }}
-          from:   ${{ secrets.EMAIL_FROM }}
+          # SMTP credentials
+          SMTP_USER:       ${{ secrets.SMTP_USER }}
+          SMTP_PASS:       ${{ secrets.SMTP_PASS }}
+          EMAIL_TO:        ${{ secrets.EMAIL_TO }}
+        run: python seat-watch-pw.py
