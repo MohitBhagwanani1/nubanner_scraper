@@ -13,8 +13,8 @@ load_dotenv()
 # ─── CONFIG ──────────────────────────────────────────────────────────────────
 TERM       = "202550"  # Summer 1 2025
 COURSES    = [
-    ("CSYE", "7374", "53300"),  # AI Agent Infrastructure
-    ("INFO", "7374", "53309"),  # Managing Op Risk
+    ("CSYE", "7380", "53375")  # AI Agent Infrastructure
+    # ("INFO", "7374", "53309"),  # Managing Op Risk
 ]
 POLL_EVERY = 180  # seconds between emails
 # ────────────────────────────────────────────────────────────────────────────
