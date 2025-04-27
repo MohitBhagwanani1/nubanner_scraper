@@ -33,7 +33,7 @@ EMAIL_TO   = os.getenv("EMAIL_TO", SMTP_USER)
 
 def send_email(body: str):
     msg = EmailMessage()
-    msg["Subject"] = "NU Banner Seat/Waitlist Status"
+    msg["Subject"] = msg
     msg["From"]    = EMAIL_FROM
     msg["To"]      = EMAIL_TO
     msg.set_content(body)
