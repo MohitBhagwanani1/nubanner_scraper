@@ -33,10 +33,12 @@ EMAIL_TO   = os.getenv("EMAIL_TO", SMTP_USER)
 
 def send_email(body: str):
     msg = EmailMessage()
-    msg["Subject"] = msg
+    msg["Subject"] = body
     msg["From"]    = EMAIL_FROM
     msg["To"]      = EMAIL_TO
     msg.set_content(body)
+    # print("msg", msg)
+    print("body", body)
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
         smtp.login(SMTP_USER, SMTP_PASS)
         smtp.send_message(msg)
@@ -110,7 +112,7 @@ def main():
         except Exception as e:
             lines.append(f"{subj}{num}-{crn}: FETCH ERROR ({e})")
         else:
-            lines.append(f"{subj}{num}-{crn}: {seats} seat(s), {wait} wait slot(s)")
+            lines.append(f"{seats} seat(s), {wait} wait slot(s)")
 
     body = "\n".join(lines)
     print("📧 Sending status update:", " | ".join(lines))
