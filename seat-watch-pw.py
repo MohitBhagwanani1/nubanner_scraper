@@ -86,6 +86,10 @@ def fetch_for(session, subj, num, crn):
     r = session.get(url, timeout=10)
     r.raise_for_status()
     j = r.json()
+    
+    # Debugging: Print the entire response
+    print(json.dumps(j, indent=2))  # To inspect the full response
+
     if not j.get("success", True):
         raise RuntimeError(f"Search API returned success=false: {j!r}")
     
@@ -97,6 +101,7 @@ def fetch_for(session, subj, num, crn):
     
     # If course data is not found, return 0 seats, 0 waitlist, and 'N/A' for position
     return 0, 0, "N/A"
+
 
 
 def main():
