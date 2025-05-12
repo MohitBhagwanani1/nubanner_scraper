@@ -88,10 +88,16 @@ def fetch_for(session, subj, num, crn):
     j = r.json()
     if not j.get("success", True):
         raise RuntimeError(f"Search API returned success=false: {j!r}")
+    
     for d in j.get("data", []):
         if d["courseReferenceNumber"] == crn:
-            return d["seatsAvailable"], d["waitAvailable"], d["waitListPosition"]
-    return 0, 0, None  # If not found, return 0 seats, 0 waitlist, and None for position
+            # Safely fetch the waitlist position, defaulting to 'N/A' if missing
+            wait_position = d.get("waitListPosition", "N/A")
+            return d["seatsAvailable"], d["waitAvailable"], wait_position
+    
+    # If course data is not found, return 0 seats, 0 waitlist, and 'N/A' for position
+    return 0, 0, "N/A"
+
 
 def main():
     session = build_session()
