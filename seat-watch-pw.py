@@ -11,10 +11,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ─── CONFIG ──────────────────────────────────────────────────────────────────
-TERM       = "202550"  # Summer 1 2025
+TERM       = "202550"  # Summer 1 2025
 COURSES    = [
-    ("CSYE", "7380", "53375")  # AI Agent Infrastructure
-    # ("INFO", "7374", "53309"),  # Managing Op Risk
+    ("CSYE", "7374", "53300"),  # CSYE 7374, 02
+    ("CSYE", "7374", "53789"),  # CSYE 7374, 03
 ]
 POLL_EVERY = 180  # seconds between emails
 # ────────────────────────────────────────────────────────────────────────────
@@ -33,11 +33,10 @@ EMAIL_TO   = os.getenv("EMAIL_TO", SMTP_USER)
 
 def send_email(body: str):
     msg = EmailMessage()
-    msg["Subject"] = body
+    msg["Subject"] = "Course Waitlist Status Update"
     msg["From"]    = EMAIL_FROM
     msg["To"]      = EMAIL_TO
     msg.set_content(body)
-    # print("msg", msg)
     print("body", body)
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
         smtp.login(SMTP_USER, SMTP_PASS)
@@ -55,7 +54,7 @@ def build_session():
 
 def authorize_term(sess):
     """
-    Tells Banner which term we want.  Must do this once per session
+    Tells Banner which term we want. Must do this once per session
     or /searchResults will always return zeros.
     """
     url = "https://nubanner.neu.edu/StudentRegistrationSsb/ssb/term/search?mode=search"
@@ -71,7 +70,6 @@ def authorize_term(sess):
     }
     r = sess.post(url, data=payload, headers=headers, timeout=10)
     r.raise_for_status()
-    # you should get back {"fwdURL": "..."} if it worked
 
 def fetch_for(session, subj, num, crn):
     uid = str(int(time.time() * 1000))
@@ -92,9 +90,8 @@ def fetch_for(session, subj, num, crn):
         raise RuntimeError(f"Search API returned success=false: {j!r}")
     for d in j.get("data", []):
         if d["courseReferenceNumber"] == crn:
-            return d["seatsAvailable"], d["waitAvailable"]
-    # not found → treat as 0/0
-    return 0, 0
+            return d["seatsAvailable"], d["waitAvailable"], d["waitListPosition"]
+    return 0, 0, None  # If not found, return 0 seats, 0 waitlist, and None for position
 
 def main():
     session = build_session()
@@ -108,11 +105,12 @@ def main():
     lines = []
     for subj, num, crn in COURSES:
         try:
-            seats, wait = fetch_for(session, subj, num, crn)
+            seats, wait, wait_position = fetch_for(session, subj, num, crn)
+            waitlist_status = f"Waitlist Position: {wait_position}" if wait_position else "No waitlist"
         except Exception as e:
             lines.append(f"{subj}{num}-{crn}: FETCH ERROR ({e})")
         else:
-            lines.append(f"{seats} seat(s), {wait} wait slot(s)")
+            lines.append(f"{seats} seat(s), {wait} wait slot(s), {waitlist_status}")
 
     body = "\n".join(lines)
     print("📧 Sending status update:", " | ".join(lines))
