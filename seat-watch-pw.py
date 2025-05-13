@@ -87,20 +87,30 @@ def fetch_for(session, subj, num, crn):
     r.raise_for_status()
     j = r.json()
     
-    # Debugging: Print the entire response
-    print(json.dumps(j, indent=2))  # To inspect the full response
+    # Debugging: Log the entire response for closer inspection
+    print("Response JSON:", json.dumps(j, indent=2))  # To inspect the full response
 
     if not j.get("success", True):
         raise RuntimeError(f"Search API returned success=false: {j!r}")
     
+    # Check the data structure and extract waitlist position
     for d in j.get("data", []):
-        if d["courseReferenceNumber"] == crn:
-            # Safely fetch the waitlist position, defaulting to 'N/A' if missing
+        if d.get("courseReferenceNumber") == crn:
+            # Print the fields available for each course
+            print("Course Data:", json.dumps(d, indent=2))  # Log each course's data
+            
+            # Check for available waitlist position
             wait_position = d.get("waitListPosition", "N/A")
+            
+            # You may also check if there's an alternate key for the waitlist position:
+            if wait_position == "N/A":
+                print(f"Waitlist position not found for CRN {crn}.")
+            
             return d["seatsAvailable"], d["waitAvailable"], wait_position
     
     # If course data is not found, return 0 seats, 0 waitlist, and 'N/A' for position
     return 0, 0, "N/A"
+
 
 
 
